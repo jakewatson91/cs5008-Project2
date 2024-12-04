@@ -5,77 +5,88 @@
 #include <netdb.h>
 #include <sys/socket.h>
 
-int main(int argc, char *argv[])
-{
-	const char *port = "65001";
-	char *server;
-	struct addrinfo hints,*host;
-	int r,sockfd;
-	char buffer[BUFSIZ];
+int main(int argc, char *argv[]) {
+    const char *port = "3200";
+    struct addrinfo hints, *host;
+    int r, sockfd;
+    char *filename;
+    FILE *fp;
 
-	if( argc<2 )
-	{
-		fprintf(stderr,"Format: client hostname\n");
-		exit(1);
-	}
-	server = argv[1];
+    if (argc < 3) {
+        fprintf(stderr, "Usage: %s <server> <image_file>\n", argv[0]);
+        exit(1);
+    }
+    const char *server = argv[1];
+    filename = argv[2];
 
-	/* obtain and convert server name and port */
-	printf("Looking for server on %s...",server);
-	memset( &hints, 0, sizeof(hints) );		/* use memset_s() */
-	hints.ai_family = AF_INET;				/* IPv4 */
-	hints.ai_socktype = SOCK_STREAM;		/* TCP */
-	r = getaddrinfo( server, port, &hints, &host );
-	if( r!=0 )
-	{
-		perror("failed");
-		exit(1);
-	}
-	puts("found");
+    // Open the file in binary mode
+    fp = fopen(filename, "rb");
+    if (fp == NULL) {
+        perror("Error opening file");
+        exit(1);
+    }
 
-	/* create a socket */
-	sockfd = socket(host->ai_family,host->ai_socktype,host->ai_protocol);
-	if( sockfd==-1 )
-	{
-		perror("failed");
-		exit(1);
-	}
+    // Get the file size
+    fseek(fp, 0, SEEK_END);
+    long filesize = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
 
-	/* connect to the socket */
-	r = connect(sockfd,host->ai_addr,host->ai_addrlen);
-	if( r==-1 )
-	{
-		perror("failed");
-		exit(1);
-	}
+    // Resolve the server's address
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;       // IPv4
+    hints.ai_socktype = SOCK_STREAM; // TCP
+    r = getaddrinfo(server, port, &hints, &host);
+    if (r != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(r));
+        fclose(fp);
+        exit(1);
+    }
 
-	/* loop to interact with the server */
-	while(1)
-	{
-		r= recv(sockfd,buffer,BUFSIZ,0);
-		if( r<1 )
-		{
-			puts("Connection closed by peer");
-			break;
-		}
-		buffer[r] = '\0';
-		printf("%s",buffer);
+    // Create the socket
+    sockfd = socket(host->ai_family, host->ai_socktype, host->ai_protocol);
+    if (sockfd == -1) {
+        perror("Socket creation failed");
+        freeaddrinfo(host);
+        fclose(fp);
+        exit(1);
+    }
 
-		/* local input  */
-		printf("Command: ");
-		fgets(buffer,BUFSIZ,stdin);
-		if( strncmp(buffer,"close",5)==0 )
-		{
-			puts("Closing connection");
-			break;
-		}
-		send(sockfd,buffer,strlen(buffer),0);
-	}	/* end while loop */
+    // Connect to the server
+    r = connect(sockfd, host->ai_addr, host->ai_addrlen);
+    if (r == -1) {
+        perror("Connect failed");
+        freeaddrinfo(host);
+        fclose(fp);
+        close(sockfd);
+        exit(1);
+    }
+    freeaddrinfo(host);
 
-	/* all done, clean-up */
-	freeaddrinfo(host);
-	close(sockfd);
-	puts("Disconnected");
+    // Send the file size to the server
+    filesize = htonl(filesize); // Convert to network byte order
+    if (send(sockfd, &filesize, sizeof(filesize), 0) == -1) {
+        perror("Failed to send file size");
+        fclose(fp);
+        close(sockfd);
+        exit(1);
+    }
 
-	return(0);
+    // Send the file contents
+    char buffer[BUFSIZ];
+    size_t bytes_read;
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), fp)) > 0) {
+        if (send(sockfd, buffer, bytes_read, 0) == -1) {
+            perror("Failed to send file data");
+            fclose(fp);
+            close(sockfd);
+            exit(1);
+        }
+    }
+
+    printf("File sent successfully!\n");
+
+    // Clean up
+    fclose(fp);
+    close(sockfd);
+    return 0;
 }

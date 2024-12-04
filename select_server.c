@@ -5,17 +5,21 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include "java_command.h"
 
 #define TRUE 1
 #define FALSE 0
 
 int main()
 {
-	const char *port = "65001";		/* available port */
-	const char *welcome_msg = "Type 'close' to disconnect; 'shutdown' to stop\n";
+	const char *port = "3200";		/* available port */
+	const char *welcome_msg = "What would you like to tell me? Type 'close' to disconnect; 'shutdown' to stop\n";
 	const int hostname_size = 32;
 	char hostname[hostname_size];
-	char buffer[BUFSIZ];
+	const int filename_size = 32;
+	char filename[filename_size];
+	char send_buffer[BUFSIZ];    // Buffer for outgoing messages
+	char recv_buffer[BUFSIZ];    // Buffer for incoming messages
 	const int backlog = 10;			/* also max connections */
 	char connection[backlog][hostname_size];	/* storage for IPv4 connections */
 	socklen_t address_len = sizeof(struct sockaddr);
@@ -97,8 +101,9 @@ int main()
 						perror("failed");
 						exit(1);
 					}
-					/* connection accepted, get name */
-					r = getnameinfo(&address,address_len,hostname,hostname_size,0,0,NI_NUMERICHOST);
+					/* connection accepted, get image name */
+					r = getnameinfo(&address,address_len,hostname,hostname_size,0,0,NI_NUMERICHOST); // this turns hostname into IP
+					
 					/* update array */
 					strcpy(connection[clientfd],hostname);
 					printf("New connection from %s\n",connection[clientfd]);
@@ -107,17 +112,52 @@ int main()
 					FD_SET(clientfd, &main_fd);
 
 					/* respond to the connection */
-					strcpy(buffer,"Hello to ");
-					strcat(buffer,connection[clientfd]);
-					strcat(buffer,"!\n");
-					strcat(buffer,welcome_msg);
-					send(clientfd,buffer,strlen(buffer),0);
+					strcpy(send_buffer,"Hello to ");
+					strcat(send_buffer,connection[clientfd]);
+					strcat(send_buffer,"!\n");
+					strcat(send_buffer,welcome_msg);
+					send(clientfd,send_buffer,strlen(send_buffer),0);
+
+					// Receive the file size
+					long filesize;
+					if (recv(clientfd, &filesize, sizeof(filesize), 0) <= 0) {
+						perror("Failed to receive file size");
+						close(clientfd);
+						close(serverfd);
+						exit(1);
+					}
+					filesize = ntohl(filesize); // Convert to host byte order
+					printf("File size: %ld bytes\n", filesize);
+
+					// Receive the file data
+					FILE *fp = fopen("received_image.png", "wb");
+					if (fp == NULL) {
+						perror("Failed to create file");
+						close(clientfd);
+						close(serverfd);
+						exit(1);
+					}
+
+					char buffer[BUFSIZ];
+					ssize_t bytes_received;
+					long total_bytes = 0;
+					while (total_bytes < filesize &&
+						(bytes_received = recv(clientfd, buffer, sizeof(buffer), 0)) > 0) {
+						fwrite(buffer, 1, bytes_received, fp);
+						total_bytes += bytes_received;
+					}
+
+					if (bytes_received < 0) {
+						perror("Error receiving file data");
+					} else {
+						printf("File received successfully. Total bytes: %ld\n", total_bytes);
+					}
 				} /* end if, add new client */
 				/* the current fd has incoming info - deal with it */
 				else
 				{
 					/* read the input buffer for the current fd */
-					r = recv(fd,buffer,BUFSIZ,0);
+					r = recv(fd,recv_buffer,BUFSIZ,0);
 					/* if nothing received, disconnect them */
 					if( r<1 )
 					{
@@ -130,13 +170,13 @@ int main()
 					/* something has been received */
 					else
 					{
-						buffer[r] = '\0';		/* terminate the string */
+						recv_buffer[r] = '\0';		/* terminate the string */
 						/* if 'shutdown' sent... */
-						if( strcmp(buffer,"shutdown\n")==0 )
+						if( strcmp(recv_buffer,"shutdown\n")==0 )
 							done = TRUE;		/* terminate the loop */
 						/* otherwise, echo back the text */
 						else
-							send(fd,buffer,strlen(buffer),0);
+							send(fd,recv_buffer,strlen(recv_buffer),0);
 					}
 				} /* end else to send/recv from client(s) */
 			} /* end if */
