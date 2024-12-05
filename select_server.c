@@ -6,9 +6,12 @@
 #include <sys/socket.h>
 #include <sys/select.h>
 #include "java_command.h"
+#include "logging.h"
 
 #define TRUE 1
 #define FALSE 0
+
+int logging(char *hostname);
 
 int main()
 {
@@ -16,8 +19,8 @@ int main()
 	const char *welcome_msg = "What would you like to tell me? Type 'close' to disconnect; 'shutdown' to stop\n";
 	const int hostname_size = 32;
 	char hostname[hostname_size];
-	const int filename_size = 32;
-	char filename[filename_size];
+	// const int filename_size = 32;
+	// char filename[filename_size];
 	char send_buffer[BUFSIZ];    // Buffer for outgoing messages
 	char recv_buffer[BUFSIZ];    // Buffer for incoming messages
 	const int backlog = 10;			/* also max connections */
@@ -107,6 +110,9 @@ int main()
 					/* update array */
 					strcpy(connection[clientfd],hostname);
 					printf("New connection from %s\n",connection[clientfd]);
+
+					// log connection
+					logging(hostname);
 
 					/* add new client socket to the master list */
 					FD_SET(clientfd, &main_fd);
