@@ -12,6 +12,7 @@
 #define BUFFER_SIZE 1024
 #define MAX_REQUESTS 2
 #define TIME_WINDOW 60 // Time window in seconds for rate limiting
+#define TIMEOUT 90 // Timeout in seconds for inactivity
 
 int running = 1; // Server running flag
 int active_users = 0; // Number of active users
@@ -20,6 +21,8 @@ pthread_mutex_t user_lock; // Mutex to protect active_users
 typedef struct {
     int request_count;
     time_t first_request_time;
+    time_t last_activity_time;
+    char client_ip[INET_ADDRSTRLEN]; // Store client IP for logging
 } client_rate_data;
 
 // Function prototypes
@@ -54,6 +57,7 @@ int main(int argc, char *argv[]) {
     }
 
     printf("Server listening on port %d\n", port);
+    log_event("Server started", "SYSTEM");
 
     while (running) {
         client_socket = accept(server_socket, (struct sockaddr *)&client_addr, &addr_len);
@@ -89,6 +93,7 @@ int main(int argc, char *argv[]) {
 
     close(server_socket);
     pthread_mutex_destroy(&user_lock);
+    log_event("Server shut down", "SYSTEM");
     printf("Server shut down.\n");
     return 0;
 }
@@ -97,9 +102,24 @@ void *handle_client(void *client_socket) {
     int sock = *(int *)client_socket;
     char buffer[BUFFER_SIZE];
     int bytes_read;
-    client_rate_data rate_data = {0, 0}; // Initialize rate data
+    client_rate_data rate_data = {0, 0, 0}; // Initialize rate data
+    rate_data.last_activity_time = time(NULL); // Set initial activity time
+
+    // Retrieve and store client IP for logging
+    struct sockaddr_in client_addr;
+    socklen_t addr_len = sizeof(client_addr);
+    getpeername(sock, (struct sockaddr *)&client_addr, &addr_len);
+    inet_ntop(AF_INET, &client_addr.sin_addr, rate_data.client_ip, INET_ADDRSTRLEN);
 
     while (1) {
+        // Check for timeout
+        if (time(NULL) - rate_data.last_activity_time > TIMEOUT) {
+            const char *timeout_message = "Disconnect because Time-Out.\n";
+            send(sock, timeout_message, strlen(timeout_message), 0);
+            log_event("Client disconnected due to inactivity", rate_data.client_ip);
+            break;
+        }
+
         // Send menu prompt to client
         const char *menu = "Enter 'close' to disconnect, 'shutdown' to turn off the server, or a QR code file name to get the URL: ";
         send(sock, menu, strlen(menu), 0);
@@ -108,16 +128,21 @@ void *handle_client(void *client_socket) {
         memset(buffer, 0, BUFFER_SIZE);
         bytes_read = recv(sock, buffer, BUFFER_SIZE - 1, 0);
         if (bytes_read <= 0) {
+            log_event("Client disconnected", rate_data.client_ip);
             printf("Client disconnected.\n");
             break;
         }
 
         buffer[strcspn(buffer, "\n")] = 0; // Remove newline character
 
+        // Reset the inactivity timer on valid activity
+        rate_data.last_activity_time = time(NULL);
+
         // Check for empty input
         if (strlen(buffer) == 0) {
             const char *empty_message = "Need an existing filename.\n";
             send(sock, empty_message, strlen(empty_message), 0);
+            log_event("Received empty command", rate_data.client_ip);
             continue;
         }
 
@@ -125,35 +150,52 @@ void *handle_client(void *client_socket) {
         if (check_rate_limit(&rate_data) == 0) {
             const char *rate_limit_message = "Too many requests, please wait.\n";
             send(sock, rate_limit_message, strlen(rate_limit_message), 0);
+            log_event("Rate limit exceeded", rate_data.client_ip);
             continue; // Skip processing and wait for the next command
         }
 
         if (strcmp(buffer, "close") == 0) {
+            log_event("Client requested disconnection", rate_data.client_ip);
             printf("Client requested to disconnect.\n");
             break;
         } else if (strcmp(buffer, "shutdown") == 0) {
+            log_event("Client requested server shutdown", rate_data.client_ip);
             printf("Client requested to shut down the server.\n");
             running = 0;
             break;
         } else { // Assume it's a file name
+            log_event("Client sent file name", rate_data.client_ip);
             printf("Client sent file name: %s\n", buffer);
 
             // Check if the file exists
             if (!file_exists(buffer)) {
                 const char *file_not_found_message = "File doesn't exist.\n";
                 send(sock, file_not_found_message, strlen(file_not_found_message), 0);
+                log_event("File not found", rate_data.client_ip);
                 continue; // Skip processing and wait for the next command
             }
 
-            // Invoke ZXing library to decode QR code
+            // Execute ZXing command and send result to client
             char command[BUFFER_SIZE];
             snprintf(command, BUFFER_SIZE, "java -cp javase.jar:core.jar com.google.zxing.client.j2se.CommandLineRunner %s", buffer);
-            printf("Executing command: %s\n", command);
-            int ret = system(command);
-            if (ret != 0) {
-                const char *error_message = "Error processing the QR code file.\n";
+            FILE *pipe = popen(command, "r"); // Open a pipe to read output
+            if (!pipe) {
+                const char *error_message = "Error executing QR code decoder.\n";
                 send(sock, error_message, strlen(error_message), 0);
+                log_event("Error executing ZXing", rate_data.client_ip);
+                continue;
             }
+
+            char result[BUFFER_SIZE];
+            memset(result, 0, BUFFER_SIZE);
+
+            // Read the command's output
+            fread(result, 1, BUFFER_SIZE - 1, pipe);
+            pclose(pipe); // Close the pipe
+
+            // Send the result to the client
+            send(sock, result, strlen(result), 0);
+            log_event("QR code result sent to client", rate_data.client_ip);
         }
     }
 

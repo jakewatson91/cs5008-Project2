@@ -1,29 +1,61 @@
-2024-12-11 01:52:26 127.0.0.1: Connection accepted
-2024-12-11 01:52:32 127.0.0.1: Connection accepted
-2024-12-11 01:52:43 127.0.0.1: Connection accepted
-2024-12-11 01:52:49 127.0.0.1: Connection refused: server is busy
-2024-12-11 01:52:54 127.0.0.1: Connection refused: server is busy
-2024-12-11 01:53:07 127.0.0.1: Connection accepted
-2024-12-11 01:58:18 127.0.0.1: Connection accepted
-2024-12-11 11:41:30 127.0.0.1: Connection accepted
-2024-12-11 11:51:21 127.0.0.1: Connection accepted
-2024-12-11 11:54:35 127.0.0.1: Connection accepted
-2024-12-11 12:05:58 127.0.0.1: Connection accepted
-2024-12-11 12:06:15 127.0.0.1: Connection accepted
-2024-12-11 12:06:24 127.0.0.1: Connection accepted
-2024-12-11 12:07:05 127.0.0.1: Connection accepted
-2024-12-11 12:07:17 127.0.0.1: Connection refused: server is busy
-2024-12-11 12:08:50 127.0.0.1: Connection accepted
-2024-12-11 12:09:54 127.0.0.1: Connection accepted
-2024-12-11 12:18:20 127.0.0.1: Connection accepted
-2024-12-11 12:22:20 127.0.0.1: Connection accepted
-2024-12-11 12:28:08 127.0.0.1: Connection accepted
-2024-12-11 12:31:02 127.0.0.1: Connection accepted
-2024-12-11 12:36:07 127.0.0.1: Connection accepted
-2024-12-11 12:44:07 127.0.0.1: Connection accepted
-2024-12-11 12:44:09 127.0.0.1: Connection accepted
-2024-12-11 12:45:43 TIMEOUT: Client disconnected due to inactivity
-2024-12-11 12:46:00 TIMEOUT: Client disconnected due to inactivity
-2024-12-11 12:48:18 127.0.0.1: Connection accepted
-2024-12-11 12:48:22 127.0.0.1: Connection accepted
-2024-12-11 12:49:11 127.0.0.1: Connection accepted
+2024-12-11 14:56:42 127.0.0.1: Client disconnected
+2024-12-11 14:56:54 SYSTEM: Server started
+2024-12-11 14:56:56 127.0.0.1: Connection accepted
+2024-12-11 14:56:58 127.0.0.1: Client sent file name
+2024-12-11 14:56:58 127.0.0.1: File not found
+2024-12-11 14:57:02 127.0.0.1: Client sent file name
+2024-12-11 14:57:02 127.0.0.1: File not found
+2024-12-11 14:57:05 127.0.0.1: Rate limit exceeded
+2024-12-11 14:57:08 127.0.0.1: Rate limit exceeded
+2024-12-11 14:57:13 127.0.0.1: Connection accepted
+2024-12-11 14:57:16 127.0.0.1: Client sent file name
+2024-12-11 14:57:16 127.0.0.1: File not found
+2024-12-11 14:57:18 127.0.0.1: Client sent file name
+2024-12-11 14:57:18 127.0.0.1: File not found
+2024-12-11 14:57:19 127.0.0.1: Rate limit exceeded
+2024-12-11 14:57:21 127.0.0.1: Received empty command
+2024-12-11 14:57:24 127.0.0.1: Rate limit exceeded
+2024-12-11 15:05:20 127.0.0.1: Connection accepted
+2024-12-11 15:05:21 127.0.0.1: Client sent file name
+2024-12-11 15:05:21 127.0.0.1: File not found
+2024-12-11 15:05:23 127.0.0.1: Received empty command
+2024-12-11 15:05:27 127.0.0.1: Client sent file name
+2024-12-11 15:05:27 127.0.0.1: File not found
+2024-12-11 15:05:29 127.0.0.1: Rate limit exceeded
+2024-12-11 15:05:32 127.0.0.1: Rate limit exceeded
+2024-12-11 15:05:42 127.0.0.1: Connection refused: server is busy
+2024-12-11 15:05:50 127.0.0.1: Client disconnected
+2024-12-11 15:05:53 127.0.0.1: Connection accepted
+2024-12-11 15:05:55 127.0.0.1: Client sent file name
+2024-12-11 15:05:55 127.0.0.1: File not found
+2024-12-11 15:06:00 127.0.0.1: Client disconnected
+2024-12-11 15:06:04 127.0.0.1: Client disconnected
+2024-12-11 15:06:10 127.0.0.1: Client disconnected
+2024-12-11 15:08:01 SYSTEM: Server started
+2024-12-11 15:08:05 127.0.0.1: Connection accepted
+2024-12-11 15:08:18 127.0.0.1: Client sent file name
+2024-12-11 15:08:23 127.0.0.1: QR code processed successfully
+2024-12-11 15:08:31 127.0.0.1: Client sent file name
+2024-12-11 15:08:31 127.0.0.1: File not found
+2024-12-11 15:08:33 127.0.0.1: Received empty command
+2024-12-11 15:08:41 127.0.0.1: Rate limit exceeded
+2024-12-11 15:09:01 127.0.0.1: Rate limit exceeded
+2024-12-11 15:10:49 127.0.0.1: Connection accepted
+2024-12-11 15:10:56 127.0.0.1: Client sent file name
+2024-12-11 15:10:59 127.0.0.1: QR code processed successfully
+2024-12-11 15:11:16 127.0.0.1: Client sent file name
+2024-12-11 15:11:24 127.0.0.1: QR code processed successfully
+2024-12-11 15:19:20 SYSTEM: Server started
+2024-12-11 15:19:28 127.0.0.1: Connection accepted
+2024-12-11 15:19:35 127.0.0.1: Client sent file name
+2024-12-11 15:19:38 127.0.0.1: QR code result sent to client
+2024-12-11 15:20:13 SYSTEM: Server started
+2024-12-11 15:22:00 SYSTEM: Server started
+2024-12-11 15:22:04 127.0.0.1: Connection accepted
+2024-12-11 15:22:11 127.0.0.1: Client sent file name
+2024-12-11 15:22:14 127.0.0.1: QR code result sent to client
+2024-12-11 15:22:34 127.0.0.1: Client sent file name
+2024-12-11 15:22:37 127.0.0.1: QR code result sent to client
+2024-12-11 15:22:40 127.0.0.1: Received empty command
+2024-12-11 15:22:46 127.0.0.1: Rate limit exceeded
+2024-12-11 15:23:03 127.0.0.1: Rate limit exceeded
